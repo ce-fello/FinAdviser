@@ -1,26 +1,20 @@
 import util.{Config, HttpClient}
 import service.{CurrencyService, CacheService}
-import bot.{TelegramBotWebhook, CommandHandler}
+import bot.CommandHandler
+import bot.TelegramBotPolling
+
 import scala.concurrent.ExecutionContext
 
-import akka.actor.ActorSystem
-import akka.stream.Materializer
-
 @main def run(): Unit =
-  implicit val system: ActorSystem = ActorSystem("CurrencyRateBotSystem")
-  implicit val mat: Materializer = Materializer(system)
-  implicit val ec: ExecutionContext = system.dispatcher
+  given ec: ExecutionContext = ExecutionContext.global
 
   val cfg = Config.load()
   val http = new HttpClient()
   val cache = new CacheService(cfg.cacheTTL)
-  val currency = new CurrencyService(http, cache)
+  val currency = new CurrencyService(http, cache, cfg.exchangeApiKey)
   val handler = new CommandHandler(currency)
-  
-  val bot = new TelegramBotWebhook(cfg.telegramToken, http, handler)
 
-  println("CurrencyRateBot запущен!")
+  val bot = new TelegramBotPolling(cfg.telegramToken, http, handler)
   bot.start()
 
-  // Ждём завершения приложения
   Thread.currentThread().join()

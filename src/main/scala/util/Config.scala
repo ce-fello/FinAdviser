@@ -2,7 +2,11 @@ package util
 
 import scala.io.Source
 
-case class Config(telegramToken: String, cacheTTL: Int = 60)
+case class Config(
+                   telegramToken: String,
+                   cacheTTL: Int = 60,
+                   exchangeApiKey: String
+                 )
 
 object Config:
   def load(): Config =
@@ -20,4 +24,9 @@ object Config:
 
     val ttl = env.get("CACHE_TTL_SECONDS").map(_.toInt).getOrElse(60)
 
-    Config(token, ttl)
+    val exchangeKey = env.getOrElse("EXCHANGE_API_KEY", {
+      println("Error: EXCHANGE_API_KEY not set!")
+      sys.exit(1)
+    })
+
+    Config(token, ttl, exchangeKey)
